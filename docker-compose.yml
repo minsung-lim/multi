@@ -19,6 +19,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: always
 
   apigw:
     build:
@@ -37,6 +38,7 @@ services:
         condition: service_healthy
     networks:
       - coz-network
+    restart: always
 
   auth:
     build:
@@ -52,11 +54,15 @@ services:
       - SPRING_DATASOURCE_PASSWORD=1q2w3e4r
       - JWT_SECRET=your-256-bit-secret
       - JWT_EXPIRATION=3600
+      - PROFILE_SERVICE_URL=http://profile:8084
     depends_on:
       postgres:
         condition: service_healthy
+      profile:
+        condition: service_started
     networks:
       - coz-network
+    restart: always
 
   metadata:
     build:
@@ -75,6 +81,7 @@ services:
         condition: service_healthy
     networks:
       - coz-network
+    restart: always
 
   profile:
     build:
@@ -93,10 +100,16 @@ services:
         condition: service_healthy
     networks:
       - coz-network
+    restart: always
 
 volumes:
   postgres-data:
+    driver: local
 
 networks:
   coz-network:
-    driver: bridge 
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16 
