@@ -49,42 +49,15 @@ out/
 **/src/main/**/target/
 **/src/test/**/target/
 
-### Mac OS ###
-.DS_Store
-.AppleDouble
-.LSOverride
-Icon
-._*
-
-### Windows ###
-# Windows thumbnail cache files
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-
-# Dump file
-*.stackdump
-
-# Folder config file
-[Dd]esktop.ini
-
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
-
-### Linux ###
-*~
-
-# temporary files which can be created if a process still has a handle open of a deleted file
-.fuse_hidden*
-
-# KDE directory preferences
-.directory
-
-# Linux trash folder which might appear on any partition or disk
-.Trash-*
-
 ### Project Specific ###
+# Binary and Log directories
+bin/
+**/bin/
+logs/
+**/logs/
+log/
+**/log/
+
 # Application Properties
 **/src/main/resources/application-prod.yml
 **/src/main/resources/application-dev.yml
@@ -130,4 +103,39 @@ mvnw.cmd
 .project
 .classpath
 .settings/
-.factorypath 
+.factorypath
+
+### Mac OS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+### Windows ###
+# Windows thumbnail cache files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+
+# Dump file
+*.stackdump
+
+# Folder config file
+[Dd]esktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+### Linux ###
+*~
+
+# temporary files which can be created if a process still has a handle open of a deleted file
+.fuse_hidden*
+
+# KDE directory preferences
+.directory
+
+# Linux trash folder which might appear on any partition or disk
+.Trash-* 
