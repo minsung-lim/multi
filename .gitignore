@@ -1,0 +1,133 @@
+### Java ###
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs
+hs_err_pid*
+replay_pid*
+
+### Gradle ###
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### VS Code ###
+.vscode/
+*.code-workspace
+.history/
+
+### Spring Boot ###
+**/src/main/**/target/
+**/src/test/**/target/
+
+### Mac OS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+### Windows ###
+# Windows thumbnail cache files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+
+# Dump file
+*.stackdump
+
+# Folder config file
+[Dd]esktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+### Linux ###
+*~
+
+# temporary files which can be created if a process still has a handle open of a deleted file
+.fuse_hidden*
+
+# KDE directory preferences
+.directory
+
+# Linux trash folder which might appear on any partition or disk
+.Trash-*
+
+### Project Specific ###
+# Application Properties
+**/src/main/resources/application-prod.yml
+**/src/main/resources/application-dev.yml
+
+# Generated Documentation
+**/build/docs/
+**/build/generated-snippets/
+
+# Test Coverage Reports
+**/build/reports/
+**/build/test-results/
+
+# Docker
+.docker/
+
+# Local Environment Files
+.env
+.env.local
+.env.*.local
+
+# Node (if using any frontend tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Maven (if using any Maven dependencies)
+.mvn/
+mvnw
+mvnw.cmd
+
+# Temporary files
+*.swp
+*.swo
+*~
+
+# System Files
+*.bak
+*.tmp
+*.temp
+
+# IDE specific files
+.project
+.classpath
+.settings/
+.factorypath 

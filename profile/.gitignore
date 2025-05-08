@@ -1,0 +1,21 @@
+# Gradle
+/build/
+/.gradle/
+/out/
+
+# IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# 기타
+*.class
+!src/main/resources/static/ 

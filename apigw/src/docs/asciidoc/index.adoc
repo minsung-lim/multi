@@ -1,0 +1,21 @@
+= API Gateway Documentation
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 2
+:sectlinks:
+
+== Health Check
+
+=== GET /actuator/health
+
+include::{snippets}/health-check/http-request.adoc[]
+include::{snippets}/health-check/http-response.adoc[]
+
+== Gateway Routes
+
+=== GET /actuator/gateway/routes
+
+include::{snippets}/gateway-routes/http-request.adoc[]
+include::{snippets}/gateway-routes/http-response.adoc[] 

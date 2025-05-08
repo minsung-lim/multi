@@ -1,0 +1,70 @@
+= Application Management API Documentation
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 2
+:sectlinks:
+:snippets: ../../../build/generated-snippets
+:highlightjs-theme: github
+:docinfo: shared
+
+== Introduction
+
+This document describes the REST API for managing application information.
+
+== API Endpoints
+
+=== Create Application
+
+Creates a new application with the specified details.
+
+==== Request Fields
+
+include::{snippets}/create-application/request-fields.adoc[]
+
+==== Response Fields
+
+include::{snippets}/create-application/response-fields.adoc[]
+
+=== Get Application
+
+Retrieves an application by its ID.
+
+==== Response Fields
+
+include::{snippets}/get-application/response-fields.adoc[]
+
+== Data Models
+
+=== Application Request
+
+[cols="1,1,1,1"]
+|===
+|Field |Type |Description |Constraints
+
+|appId |String |Application ID |Required
+|appName |String |Application name |Required
+|scopes |Set<String> |Application scopes |At least one scope required
+|secretKey |String |Secret key for the application |Required
+|cipherKey |String |Cipher key for the application |Required
+|redirectUri |String |Redirect URI for OAuth2 |Optional
+|grantTypes |Set<String> |OAuth2 grant types |At least one grant type required
+|===
+
+=== Application Response
+
+[cols="1,1,1"]
+|===
+|Field |Type |Description
+
+|appId |String |Application ID
+|appName |String |Application name
+|scopes |Set<String> |Application scopes
+|secretKey |String |Secret key for the application
+|cipherKey |String |Cipher key for the application
+|redirectUri |String |Redirect URI for OAuth2
+|grantTypes |Set<String> |OAuth2 grant types
+|createdDate |DateTime |Creation date
+|modifiedDate |DateTime |Last modification date
+|=== 

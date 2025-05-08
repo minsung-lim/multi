@@ -1,0 +1,17 @@
+= Profile User API 문서
+
+== 사용자 조회 (Get User)
+include::{snippets}/get-user/http-request.adoc[]
+include::{snippets}/get-user/http-response.adoc[]
+
+== 사용자 생성 (Create User)
+include::{snippets}/create-user/http-request.adoc[]
+include::{snippets}/create-user/http-response.adoc[]
+
+== 사용자 수정 (Update User)
+include::{snippets}/update-user/http-request.adoc[]
+include::{snippets}/update-user/http-response.adoc[]
+
+== 사용자 삭제 (Delete User)
+include::{snippets}/delete-user/http-request.adoc[]
+include::{snippets}/delete-user/http-response.adoc[] 

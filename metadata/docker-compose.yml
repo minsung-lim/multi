@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/metadata
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=1q2w3e4r
+    depends_on:
+      - postgres
+    networks:
+      - metadata-network
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=metadata
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1q2w3e4r
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - metadata-network
+
+volumes:
+  postgres-data:
+
+networks:
+  metadata-network:
+    driver: bridge 

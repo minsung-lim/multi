@@ -1,0 +1,90 @@
+= Auth Service API Documentation
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 2
+:sectlinks:
+
+== Introduction
+
+This document describes the REST API for the Auth Service. The service provides OAuth2-compliant token management functionality.
+
+== Authentication
+
+The service uses OAuth2 Bearer token authentication. All requests to protected endpoints must include an Authorization header with a valid Bearer token.
+
+== API Endpoints
+
+=== Get Access Token
+
+This endpoint is used to obtain an access token by providing user credentials.
+
+==== Request
+
+[source,http]
+----
+POST /oauth/token HTTP/1.1
+Host: localhost:8080
+Content-Type: application/json
+
+{
+    "loginId": "testuser",
+    "password": "password"
+}
+----
+
+==== Request Headers
+
+include::{snippets}/get-token/request-headers.adoc[]
+
+==== Request Fields
+
+include::{snippets}/get-token/request-fields.adoc[]
+
+==== Response Headers
+
+include::{snippets}/get-token/response-headers.adoc[]
+
+==== Response Fields
+
+include::{snippets}/get-token/response-fields.adoc[]
+
+==== Example Response
+
+[source,json]
+----
+{
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "token_type": "Bearer",
+    "expires_in": 3600,
+    "scope": "read write"
+}
+----
+
+=== Revoke Token
+
+This endpoint is used to revoke an access token.
+
+==== Request
+
+[source,http]
+----
+POST /oauth/revoke HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+----
+
+==== Request Headers
+
+include::{snippets}/revoke-token/request-headers.adoc[]
+
+== Error Responses
+
+The API uses standard HTTP status codes to indicate the success or failure of requests:
+
+* 200 OK - The request was successful
+* 400 Bad Request - The request was invalid
+* 401 Unauthorized - Authentication failed
+* 403 Forbidden - The authenticated user doesn't have permission to access the resource
+* 500 Internal Server Error - An error occurred on the server 

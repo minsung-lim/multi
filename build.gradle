@@ -1,0 +1,68 @@
+// 루트 프로젝트 설정
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.3' apply false
+    id 'io.spring.dependency-management' version '1.1.4' apply false
+}
+
+// 모든 프로젝트에 공통으로 적용될 설정
+allprojects {
+    group = 'com.coz'
+    version = '1.0.0-SNAPSHOT'
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+// 하위 프로젝트에 공통으로 적용될 설정
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
+
+    // 공통 의존성
+    dependencies {
+        compileOnly 'org.projectlombok:lombok:1.18.30'
+        annotationProcessor 'org.projectlombok:lombok:1.18.30'
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    }
+
+    // Java 컴파일 옵션
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+}
+
+// 루트 프로젝트의 clean 태스크가 모든 하위 프로젝트의 clean을 실행하도록 설정
+tasks.named('clean') {
+    dependsOn subprojects.clean
+}
+
+// 각 서비스별 포트 설정을 application.yml에 주입하는 태스크
+task configurePorts {
+    doLast {
+        subprojects { project ->
+            def port
+            switch(project.name) {
+                case 'apigw': port = 8080; break
+                case 'auth': port = 8082; break
+                case 'metadata': port = 8083; break
+                case 'profile': port = 8084; break
+            }
+            
+            def configFile = file("${project.projectDir}/src/main/resources/application.yml")
+            if (configFile.exists()) {
+                def content = configFile.text
+                content = content.replaceAll(/server:\s*port:\s*\d+/, "server:\n  port: ${port}")
+                configFile.text = content
+            }
+        }
+    }
+}
+
+// 빌드 전에 포트 설정 태스크 실행
+build.dependsOn configurePorts
