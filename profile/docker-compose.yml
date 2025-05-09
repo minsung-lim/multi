@@ -6,7 +6,7 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/profiledb
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:8000/postgres
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=1q2w3e4r
     depends_on:
@@ -21,5 +21,5 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1q2w3e4r
     ports:
-      - "5432:5432"
+      - "8000:5432"
     restart: always 

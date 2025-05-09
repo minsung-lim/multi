@@ -1,7 +1,5 @@
 server:
   port: 8082
-  servlet:
-    context-path: /
 
 spring:
   datasource:
@@ -17,10 +15,6 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-profile:
-  service:
-    url: http://localhost:8088/profile/user/loginid
-
 jwt:
   secret: ${JWT_SECRET:your-256-bit-secret}
   expiration: ${JWT_EXPIRATION:3600}
@@ -33,13 +27,3 @@ logging:
     com.auth: DEBUG
     org.springframework.security: INFO
     org.springframework.web: INFO
-
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
-    enabled: true
-  api-docs:
-    path: /v3/api-docs
-    enabled: true
-  packages-to-scan: com.auth.controller
-  paths-to-match: /oauth/** 

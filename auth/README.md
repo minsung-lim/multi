@@ -62,7 +62,7 @@ docker-compose up -d
 
 This will start:
 - Auth Service on port 8080
-- PostgreSQL on port 5432
+- PostgreSQL on port 8000
 
 ## API Endpoints
 
@@ -90,9 +90,9 @@ The application can be configured through environment variables or `application.
 ```yaml
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/auth
+    url: jdbc:postgresql://localhost:8000/postgres
     username: postgres
-    password: postgres
+    password: 1q2w3e4r
   jpa:
     hibernate:
       ddl-auto: update
