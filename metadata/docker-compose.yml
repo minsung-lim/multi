@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   app:
     build: .
@@ -11,25 +10,12 @@ services:
       - SPRING_DATASOURCE_PASSWORD=1q2w3e4r
     depends_on:
       - postgres
-    networks:
-      - metadata-network
 
   postgres:
-    image: postgres:15-alpine
+    image: postgres:15
     ports:
       - "8000:5432"
     environment:
-      - POSTGRES_DB=metadata
+      - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=1q2w3e4r
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    networks:
-      - metadata-network
-
-volumes:
-  postgres-data:
-
-networks:
-  metadata-network:
-    driver: bridge 

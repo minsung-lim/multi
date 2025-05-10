@@ -3,17 +3,25 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:8000/postgres
+    driver-class-name: org.postgresql.Driver
     username: postgres
     password: 1q2w3e4r
+    hikari:
+      pool-name: AuthHikariPool
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 120000
+      auto-commit: true
+      connection-test-query: SELECT 1
+      validation-timeout: 5000
+      leak-detection-threshold: 60000
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 jwt:
   secret: ${JWT_SECRET:your-256-bit-secret}
@@ -24,6 +32,4 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   level:
     root: INFO
-    com.auth: DEBUG
-    org.springframework.security: INFO
-    org.springframework.web: INFO
+    com.account.auth: DEBUG 

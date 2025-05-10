@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   app:
     build: .
@@ -9,28 +8,14 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:8000/postgres
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=1q2w3e4r
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
     depends_on:
-      - db
-    networks:
-      - auth-network
+      - postgres
 
-  db:
-    image: postgres:15-alpine
+  postgres:
+    image: postgres:15
     ports:
       - "8000:5432"
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=1q2w3e4r
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    networks:
-      - auth-network
-
-volumes:
-  postgres-data:
-
-networks:
-  auth-network:
-    driver: bridge 

@@ -22,7 +22,7 @@
     </appender>
 
     <!-- Request/Response Logging -->
-    <logger name="com.auth.controller" level="DEBUG" additivity="false">
+    <logger name="com.account.auth.controller" level="DEBUG" additivity="false">
         <appender-ref ref="Console"/>
         <appender-ref ref="File"/>
     </logger>

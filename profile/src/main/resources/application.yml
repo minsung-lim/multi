@@ -3,24 +3,29 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://127.0.0.1:8000/postgres
+    url: jdbc:postgresql://localhost:8000/postgres
     driver-class-name: org.postgresql.Driver
     username: postgres
     password: 1q2w3e4r
     hikari:
+      pool-name: ProfileHikariPool
       maximum-pool-size: 10
-      minimum-idle: 2
-      idle-timeout: 30000
-      pool-name: HikariCP
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 120000
+      auto-commit: true
+      connection-test-query: SELECT 1
+      validation-timeout: 5000
+      leak-detection-threshold: 60000
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-  h2:
-    console:
-      enabled: true
 
 logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   level:
     root: INFO
-    com.example.profile: DEBUG 
+    com.account.profile: DEBUG 
