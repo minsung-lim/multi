@@ -1,6 +1,7 @@
 package com.account.auth.controller;
 
 import com.account.auth.dto.CodeResponse;
+import com.account.auth.dto.CleanCodeResponse;
 import com.account.auth.dto.LoginRequest;
 import com.account.auth.dto.TokenRequest;
 import com.account.auth.dto.TokenResponse;
@@ -77,5 +78,18 @@ public class AuthController {
         authService.revokeToken(loginId, clientId);
         log.info("Tokens revoked successfully");
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/cleanCode")
+    @Operation(summary = "Clean expired codes", description = "Delete all codes that are older than 5 minutes")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Codes successfully cleaned",
+            content = @Content(schema = @Schema(implementation = CleanCodeResponse.class)))
+    })
+    public ResponseEntity<CleanCodeResponse> cleanExpiredCodes() {
+        log.info("Clean expired codes request received");
+        int deletedCount = authService.cleanExpiredCodes();
+        log.info("Cleaned {} expired codes", deletedCount);
+        return ResponseEntity.ok(new CleanCodeResponse(deletedCount));
     }
 } 

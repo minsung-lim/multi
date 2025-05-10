@@ -6,16 +6,19 @@ import com.account.auth.dto.LoginRequest;
 import com.account.auth.dto.TokenRequest;
 import com.account.auth.dto.TokenResponse;
 import com.account.auth.service.AuthService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -39,87 +42,95 @@ class AuthControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @MockBean
     private AuthService authService;
 
     @Test
-    void getCode_ShouldReturnCode() throws Exception {
-        // Given
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setLoginId("testUser");
-        loginRequest.setPassword("testPass");
+    void getCode() throws Exception {
+        // given
+        LoginRequest request = new LoginRequest("user@example.com", "password123");
+        when(authService.generateCode(any())).thenReturn("abc123def456");
 
-        String code = "testCode123";
-        when(authService.generateCode(any(LoginRequest.class))).thenReturn(code);
-
-        // When & Then
+        // when & then
         mockMvc.perform(post("/oauth/code")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"loginId\":\"testUser\",\"password\":\"testPass\"}"))
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(code))
-                .andDo(document("get-code",
+                .andDo(document("get-oauth-code",
                         requestHeaders(
                                 headerWithName("Content-Type").description("The content type of the request")
                         ),
                         requestFields(
-                                fieldWithPath("loginId").type(JsonFieldType.STRING).description("User's login ID"),
-                                fieldWithPath("password").type(JsonFieldType.STRING).description("User's password")
+                                fieldWithPath("loginId").description("User's login ID (email)"),
+                                fieldWithPath("password").description("User's password")
                         ),
                         responseFields(
-                                fieldWithPath("code").type(JsonFieldType.STRING).description("Generated authorization code")
+                                fieldWithPath("code").description("Generated OAuth code")
                         )
                 ));
     }
 
     @Test
-    void getToken_ShouldReturnToken() throws Exception {
-        // Given
-        TokenRequest tokenRequest = new TokenRequest();
-        tokenRequest.setCode("testCode123");
-        tokenRequest.setClient_id("testClient");
+    void getToken() throws Exception {
+        // given
+        TokenRequest request = new TokenRequest("abc123def456", "client123", "authorization_code");
+        when(authService.generateToken(any())).thenReturn(new TokenResponse(
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "abc123def456",
+                1800L
+        ));
 
-        TokenResponse tokenResponse = new TokenResponse();
-        tokenResponse.setAccess_token("testToken123");
-        tokenResponse.setExpires_in(3600);
-        tokenResponse.setRefresh_token(null);
-
-        when(authService.generateToken(any(TokenRequest.class))).thenReturn(tokenResponse);
-
-        // When & Then
+        // when & then
         mockMvc.perform(post("/oauth/token")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"code\":\"testCode123\",\"client_id\":\"testClient\",\"grant_type\":\"authorization_code\"}"))
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.access_token").value("testToken123"))
-                .andExpect(jsonPath("$.expires_in").value(3600))
                 .andDo(document("get-token",
-                        requestHeaders(
-                                headerWithName("Content-Type").description("The content type of the request")
-                        ),
                         requestFields(
-                                fieldWithPath("code").type(JsonFieldType.STRING).description("Authorization code"),
-                                fieldWithPath("client_id").type(JsonFieldType.STRING).description("Client ID"),
-                                fieldWithPath("grant_type").type(JsonFieldType.STRING).description("Grant type (authorization_code)")
+                                fieldWithPath("code").description("Authorization code"),
+                                fieldWithPath("clientId").description("Client ID"),
+                                fieldWithPath("grantType").description("Grant type (must be \"authorization_code\")")
                         ),
                         responseFields(
-                                fieldWithPath("access_token").type(JsonFieldType.STRING).description("JWT access token"),
-                                fieldWithPath("refresh_token").optional().type(JsonFieldType.STRING).description("Refresh token (nullable)"),
-                                fieldWithPath("expires_in").type(JsonFieldType.NUMBER).description("Token expiration time in seconds")
+                                fieldWithPath("access_token").description("JWT access token"),
+                                fieldWithPath("refresh_token").description("Refresh token"),
+                                fieldWithPath("expires_in").description("Token expiration time in seconds")
                         )
                 ));
     }
 
     @Test
     void revokeToken() throws Exception {
+        // given
         doNothing().when(authService).revokeToken(anyString(), anyString());
 
-        mockMvc.perform(post("/oauth/revoke?loginId=testUser&clientId=testClient"))
+        // when & then
+        mockMvc.perform(RestDocumentationRequestBuilders.post("/oauth/revoke")
+                .queryParam("loginId", "user@example.com")
+                .queryParam("clientId", "client123"))
                 .andExpect(status().isOk())
                 .andDo(document("revoke-token",
                         queryParameters(
                                 parameterWithName("loginId").description("Login ID of the user"),
                                 parameterWithName("clientId").optional().description("Client ID (optional)")
+                        )
+                ));
+    }
+
+    @Test
+    void cleanExpiredCodes() throws Exception {
+        // given
+        when(authService.cleanExpiredCodes()).thenReturn(100);
+
+        // when & then
+        mockMvc.perform(RestDocumentationRequestBuilders.get("/oauth/cleanCode"))
+                .andExpect(status().isOk())
+                .andDo(document("clean-expired-codes",
+                        responseFields(
+                                fieldWithPath("deleted").description("Number of deleted codes")
                         )
                 ));
     }

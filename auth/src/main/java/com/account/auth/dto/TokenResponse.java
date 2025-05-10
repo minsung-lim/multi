@@ -19,8 +19,4 @@ public class TokenResponse {
 
     @Schema(description = "Token expiration in seconds", example = "3600")
     private long expires_in = 3600;
-
-    public TokenResponse(String access_token) {
-        this.access_token = access_token;
-    }
-} 
+}

@@ -3,147 +3,134 @@ package com.account.auth.service;
 import com.account.auth.dto.LoginRequest;
 import com.account.auth.dto.TokenRequest;
 import com.account.auth.dto.TokenResponse;
-import com.account.auth.model.AccessToken;
 import com.account.auth.model.Code;
-import com.account.auth.model.User;
-import com.account.auth.repository.AccessTokenRepository;
+import com.account.auth.model.Token;
 import com.account.auth.repository.CodeRepository;
-import com.account.auth.repository.UserRepository;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
+import com.account.auth.repository.TokenRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
-    private final UserRepository userRepository;
-    private final AccessTokenRepository accessTokenRepository;
     private final CodeRepository codeRepository;
+    private final TokenRepository tokenRepository;
+    private final ProfileService profileService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final MetadataService metadataService;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    @Value("${auth.issuer:https://auth.example.com}")
-    private String issuer;
-
-    @Value("${auth.audience:https://api.example.com}")
-    private String audience;
-
-    @Value("${auth.jwt.secret:your-256-bit-secret-your-256-bit-secret}")
-    private String jwtSecret;
+    @Value("${auth.token.scope:read write}")
+    private String defaultScope;
 
     @Transactional
     public TokenResponse generateToken(TokenRequest request) {
-        // Validate code
-        Code code = codeRepository.findById(request.getCode())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid code"));
-
-        // Check if code is expired (5 minutes)
-        if (code.getCreateDatetime().plusMinutes(5).isBefore(LocalDateTime.now())) {
-            codeRepository.delete(code);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Code expired");
+        // clientId 유효성 검사
+        if (request.getClientId() == null || request.getClientId().trim().isEmpty()) {
+            throw new RuntimeException("Client ID is required");
         }
 
-        // Get user from code
-        var user = userRepository.findById(code.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid user"));
+        // grant type 유효성 검사
+        List<String> allowedGrantTypes = metadataService.getGrantTypes(request.getClientId());
+        if (!allowedGrantTypes.contains(request.getGrantType())) {
+            throw new RuntimeException("Invalid grant type");
+        }
 
-        // Generate access token
-        String token = generateAlphanumericToken();
-        String scope = "read write"; // You might want to make this configurable
+        // authorization code 검증
+        Code code = codeRepository.findByCode(request.getCode())
+                .orElseThrow(() -> new RuntimeException("Invalid code"));
 
-        // Save access token
-        AccessToken accessToken = new AccessToken(token, user.getUserId(), user.getLoginId(), request.getClient_id(), scope);
-        accessTokenRepository.save(accessToken);
+        if (code.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Code has expired");
+        }
 
-        // Delete used code
+        // 사용자 프로필 조회
+        var profile = profileService.getProfile(code.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 기존 토큰 삭제
+        tokenRepository.deleteByLoginIdAndClientId(profile.getLoginId(), request.getClientId());
+
+        // 새 토큰 생성
+        String token = generateRandomCode(30);
+        String accessToken = jwtTokenProvider.generateAccessToken(profile);
+
+        Token tokenVO = new Token();
+        tokenVO.setToken(token);
+        tokenVO.setLoginId(profile.getLoginId());
+        tokenVO.setUserId(profile.getUserId());
+        tokenVO.setClientId(request.getClientId());
+        tokenVO.setAccessToken(accessToken);
+        tokenVO.setRefreshToken(token);
+        tokenVO.setExpiresAt(LocalDateTime.now().plusMinutes(30));
+        tokenVO.setScope(defaultScope);
+        tokenRepository.save(tokenVO);
+
+        // 사용된 코드 삭제
         codeRepository.delete(code);
 
-        // Create JWT
-        Instant now = Instant.now();
-        Date issuedAt = Date.from(now);
-        Date expiresAt = Date.from(now.plusSeconds(3600));
-
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("scope", scope);
-        claims.put("login_id", user.getLoginId());
-
-        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-
-        String jwt = Jwts.builder()
-                .setClaims(claims)
-                .setIssuer(issuer)
-                .setAudience(request.getClient_id())
-                .setSubject(user.getUserId())
-                .setIssuedAt(issuedAt)
-                .setExpiration(expiresAt)
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-
-        return new TokenResponse(
-            jwt,
-            token,
-            Instant.ofEpochSecond(1800).getEpochSecond()
-        );
+        return new TokenResponse(accessToken, token, 1800L);
     }
 
     @Transactional
     public void revokeToken(String loginId, String clientId) {
-        // Find user by loginId
-        User user = userRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-        // Delete tokens based on userId and clientId
-        if (clientId != null && !clientId.isEmpty()) {
-            accessTokenRepository.deleteByUserIdAndClientId(user.getUserId(), clientId);
+        if (clientId == null || clientId.trim().isEmpty()) {
+            tokenRepository.deleteByLoginId(loginId);
         } else {
-            accessTokenRepository.deleteByUserId(user.getUserId());
+            tokenRepository.deleteByLoginIdAndClientId(loginId, clientId);
         }
     }
 
     @Transactional
-    public String generateCode(LoginRequest loginRequest) {
-        var user = userRepository.findByLoginId(loginRequest.getLoginId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request"));
+    public String generateCode(LoginRequest request) {
+        // 사용자 인증
+        var profile = profileService.authenticate(request.getLoginId(), request.getPassword())
+                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
 
-        if (!user.getPassword().equals(loginRequest.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid request");
-        }
+        // 기존 코드 삭제
+        codeRepository.deleteByUserId(profile.getUserId());
 
-        String code = generateAlphanumericCode();
-        Code codeEntity = new Code(code);
-        codeEntity.setUserId(user.getUserId());
+        // 새 코드 생성
+        String code = generateRandomCode(20);
+        Code codeEntity = new Code();
+        codeEntity.setCode(code);
+        codeEntity.setUserId(profile.getUserId());
+        codeEntity.setExpiresAt(LocalDateTime.now().plusMinutes(10));
         codeRepository.save(codeEntity);
+
         return code;
     }
 
-    private String generateAlphanumericToken() {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        StringBuilder token = new StringBuilder(20);
-        for (int i = 0; i < 20; i++) {
-            token.append(chars.charAt(secureRandom.nextInt(chars.length())));
+    @Transactional
+    public int cleanExpiredCodes() {
+        int totalDeleted = 0;
+        LocalDateTime now = LocalDateTime.now();
+        
+        while (true) {
+            List<Code> expiredCodes = codeRepository.findTop10ByExpiresAtBeforeOrderByExpiresAtAsc(now);
+            if (expiredCodes.isEmpty()) {
+                break;
+            }
+            
+            codeRepository.deleteAll(expiredCodes);
+            totalDeleted += expiredCodes.size();
         }
-        return token.toString();
+        
+        return totalDeleted;
     }
 
-    private String generateAlphanumericCode() {
+    private String generateRandomCode(int size) {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        StringBuilder code = new StringBuilder(30);
-        for (int i = 0; i < 30; i++) {
+        StringBuilder code = new StringBuilder(size);
+        for (int i = 0; i < size; i++) {
             code.append(chars.charAt(secureRandom.nextInt(chars.length())));
         }
         return code.toString();
