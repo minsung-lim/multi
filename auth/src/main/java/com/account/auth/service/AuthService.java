@@ -8,6 +8,9 @@ import com.account.auth.model.Code;
 import com.account.auth.repository.AccessTokenRepository;
 import com.account.auth.repository.CodeRepository;
 import com.account.auth.repository.UserRepository;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -15,11 +18,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Base64;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -35,17 +42,18 @@ public class AuthService {
     @Value("${auth.audience:https://api.example.com}")
     private String audience;
 
-//    @Transactional
+    @Value("${auth.jwt.secret:your-256-bit-secret-your-256-bit-secret}")
+    private String jwtSecret;
+
+    @Transactional
     public TokenResponse generateToken(TokenRequest request) {
         // Validate code
         Code code = codeRepository.findById(request.getCode())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid code"));
 
-        // Delete used code
-        codeRepository.delete(code);
-
         // Check if code is expired (5 minutes)
         if (code.getCreateDatetime().plusMinutes(5).isBefore(LocalDateTime.now())) {
+            codeRepository.delete(code);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Code expired");
         }
 
@@ -61,18 +69,34 @@ public class AuthService {
         AccessToken accessToken = new AccessToken(token, user.getUserId(), user.getLoginId(), request.getClient_id(), scope);
         accessTokenRepository.save(accessToken);
 
-        // Create JWT response
+        // Delete used code
+        codeRepository.delete(code);
+
+        // Create JWT
         Instant now = Instant.now();
+        Date issuedAt = Date.from(now);
+        Date expiresAt = Date.from(now.plusSeconds(3600));
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("scope", scope);
+        claims.put("login_id", user.getLoginId());
+
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+
+        String jwt = Jwts.builder()
+                .setClaims(claims)
+                .setIssuer(issuer)
+                .setAudience(request.getClient_id())
+                .setSubject(user.getUserId())
+                .setIssuedAt(issuedAt)
+                .setExpiration(expiresAt)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+
         return new TokenResponse(
+            jwt,
             token,
-            "Bearer",
-            3600,
-            scope,
-            issuer,
-            audience,
-            user.getUserId(),
-            now.getEpochSecond(),
-            now.plusSeconds(3600).getEpochSecond()
+            Instant.ofEpochSecond(1800).getEpochSecond()
         );
     }
 
@@ -80,7 +104,7 @@ public class AuthService {
     public void revokeToken(String token) {
         AccessToken accessToken = accessTokenRepository.findByToken(token)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid token"));
-        accessTokenRepository.save(accessToken);
+        accessTokenRepository.delete(accessToken);
     }
 
     @Transactional
