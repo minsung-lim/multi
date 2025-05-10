@@ -62,15 +62,20 @@ public class AuthController {
     }
 
     @PostMapping("/revoke")
-    @Operation(summary = "Revoke token", description = "Revoke an existing access token")
+    @Operation(summary = "Revoke token", description = "Revoke tokens for a user")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Token successfully revoked"),
-        @ApiResponse(responseCode = "401", description = "Invalid or expired token")
+        @ApiResponse(responseCode = "200", description = "Tokens successfully revoked"),
+        @ApiResponse(responseCode = "400", description = "Invalid request"),
+        @ApiResponse(responseCode = "404", description = "User not found")
     })
     public ResponseEntity<Void> revokeToken(
-            @Parameter(description = "Bearer token to revoke", required = true)
-            @RequestHeader("Authorization") String token) {
-        authService.revokeToken(token.replace("Bearer ", ""));
+            @Parameter(description = "Login ID of the user", required = true)
+            @RequestParam String loginId,
+            @Parameter(description = "Client ID (optional)")
+            @RequestParam(required = false) String clientId) {
+        log.info("Revoke request received - loginId: {}, clientId: {}", loginId, clientId);
+        authService.revokeToken(loginId, clientId);
+        log.info("Tokens revoked successfully");
         return ResponseEntity.ok().build();
     }
 } 

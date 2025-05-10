@@ -5,6 +5,7 @@ import com.account.auth.dto.TokenRequest;
 import com.account.auth.dto.TokenResponse;
 import com.account.auth.model.AccessToken;
 import com.account.auth.model.Code;
+import com.account.auth.model.User;
 import com.account.auth.repository.AccessTokenRepository;
 import com.account.auth.repository.CodeRepository;
 import com.account.auth.repository.UserRepository;
@@ -101,10 +102,17 @@ public class AuthService {
     }
 
     @Transactional
-    public void revokeToken(String token) {
-        AccessToken accessToken = accessTokenRepository.findByToken(token)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid token"));
-        accessTokenRepository.delete(accessToken);
+    public void revokeToken(String loginId, String clientId) {
+        // Find user by loginId
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        // Delete tokens based on userId and clientId
+        if (clientId != null && !clientId.isEmpty()) {
+            accessTokenRepository.deleteByUserIdAndClientId(user.getUserId(), clientId);
+        } else {
+            accessTokenRepository.deleteByUserId(user.getUserId());
+        }
     }
 
     @Transactional
