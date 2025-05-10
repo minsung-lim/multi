@@ -1,19 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <property name="LOG_PATH" value="logs"/>
+    <property name="ACCESS_LOG_FILE_NAME" value="auth-access"/>
+    <property name="SERVICE_LOG_FILE_NAME" value="auth-service"/>
     <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+    <property name="CONSOLE_PATTERN" value="%d{HH:mm:ss.SSS} %-5level - %msg%n"/>
 
     <!-- Console Appender -->
-    <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>${LOG_PATTERN}</pattern>
+            <pattern>${CONSOLE_PATTERN}</pattern>
         </encoder>
     </appender>
 
-    <!-- File Appender -->
-    <appender name="File" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/auth-service.log</file>
+    <!-- Rolling File Appender for Access Logs -->
+    <appender name="ACCESS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${ACCESS_LOG_FILE_NAME}.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>logs/auth-service.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>${LOG_PATH}/${ACCESS_LOG_FILE_NAME}.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
@@ -21,15 +25,30 @@
         </encoder>
     </appender>
 
-    <!-- Request/Response Logging -->
-    <logger name="com.account.auth.controller" level="DEBUG" additivity="false">
-        <appender-ref ref="Console"/>
-        <appender-ref ref="File"/>
+    <!-- Rolling File Appender for Service Logs -->
+    <appender name="SERVICE_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${SERVICE_LOG_FILE_NAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${SERVICE_LOG_FILE_NAME}.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Access Logger -->
+    <logger name="com.account.auth.logging.AccessLogger" level="INFO" additivity="false">
+        <appender-ref ref="ACCESS_FILE"/>
     </logger>
 
-    <!-- Root Logger -->
+    <!-- Service Logger -->
+    <logger name="com.account.auth" level="INFO" additivity="false">
+        <appender-ref ref="SERVICE_FILE"/>
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
     <root level="INFO">
-        <appender-ref ref="Console"/>
-        <appender-ref ref="File"/>
+        <appender-ref ref="CONSOLE"/>
     </root>
 </configuration> 

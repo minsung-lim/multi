@@ -1,6 +1,8 @@
 package com.account.auth.controller;
 
+import com.account.auth.dto.CodeResponse;
 import com.account.auth.dto.LoginRequest;
+import com.account.auth.dto.TokenRequest;
 import com.account.auth.dto.TokenResponse;
 import com.account.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,21 +27,37 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/token")
-    @Operation(summary = "Get access token", description = "Obtain an access token by providing user credentials")
+    @PostMapping("/code")
+    @Operation(summary = "Get OAuth code", description = "Obtain an OAuth code by providing user credentials")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Token successfully generated",
-            content = @Content(schema = @Schema(implementation = TokenResponse.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid request"),
-        @ApiResponse(responseCode = "401", description = "Invalid credentials")
+        @ApiResponse(responseCode = "200", description = "Code successfully generated",
+            content = @Content(schema = @Schema(implementation = CodeResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid request")
     })
-    public ResponseEntity<TokenResponse> getToken(
+    public ResponseEntity<CodeResponse> getCode(
             @Parameter(description = "User credentials", required = true)
             @RequestBody LoginRequest loginRequest,
             HttpServletRequest request) {
-        log.info("Token request received - Headers: {}, Body: {}", request.getHeaderNames(), loginRequest);
-        TokenResponse response = authService.authenticate(loginRequest);
-        log.info("Token response - Headers: {}, Body: {}", response);
+        log.info("Code request received - Headers: {}, Body: {}", request.getHeaderNames(), loginRequest);
+        String code = authService.generateCode(loginRequest);
+        log.info("Code generated successfully");
+        return ResponseEntity.ok(new CodeResponse(code));
+    }
+
+    @PostMapping("/token")
+    @Operation(summary = "Get access token", description = "Obtain an access token by providing an authorization code")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Token successfully generated",
+            content = @Content(schema = @Schema(implementation = TokenResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid code or expired code")
+    })
+    public ResponseEntity<TokenResponse> getToken(
+            @Parameter(description = "Token request", required = true)
+            @RequestBody TokenRequest tokenRequest,
+            HttpServletRequest request) {
+        log.info("Token request received - Headers: {}, Body: {}", request.getHeaderNames(), tokenRequest);
+        TokenResponse response = authService.generateToken(tokenRequest);
+        log.info("Token generated successfully");
         return ResponseEntity.ok(response);
     }
 
